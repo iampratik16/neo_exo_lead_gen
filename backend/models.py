@@ -19,6 +19,8 @@ class Lead(BaseModel):
     google_maps_url: str
     category: str
     employees_est: str
+    revenue: str
+    founded: str
     icp_score: int
     tier: str
     key_contact_name: str

@@ -35,15 +35,21 @@ function App() {
   const exportCSV = () => {
     if (!leads.length) return;
     
-    // Define headers matching the models
-    const headers = ["Company Name", "Description", "Business Category", "Website", "Country", "City", "Google Maps URL", "Category (Maps)", "Employees (Est.)", "ICP Score", "Tier", "Key Contact", "Role", "LinkedIn", "Likely Email", "Phone", "Instagram", "Products / Notes", "Sourcing Signals", "Why Hot Lead"];
+    // Define headers as requested:
+    const headers = ["Company Name", "Person", "Title", "Email", "Website", "About", "Country", "Industry", "Employees", "Revenue", "Founded"];
     
     const rows = leads.map(l => [
       `"${(l.company_name || '').replace(/"/g, '""')}"`,
+      `"${(l.key_contact_name || '').replace(/"/g, '""')}"`,
+      `"${(l.contact_role || '').replace(/"/g, '""')}"`,
+      `"${(l.likely_email || '').replace(/"/g, '""')}"`,
+      `"${(l.website || '').replace(/"/g, '""')}"`,
       `"${(l.description || '').replace(/"/g, '""')}"`,
+      `"${(l.country || '').replace(/"/g, '""')}"`,
       `"${(l.business_category || '').replace(/"/g, '""')}"`,
-      `"${l.website}"`, `"${l.country}"`, `"${l.city}"`, `"${l.google_maps_url}"`, `"${l.category}"`, `"${l.employees_est}"`, 
-      l.icp_score, `"${l.tier}"`, `"${l.key_contact_name}"`, `"${l.contact_role}"`, `"${l.linkedin_url}"`, `"${l.likely_email}"`, `"${l.phone}"`, `"${l.instagram}"`, `"${(l.products_notes || '').replace(/"/g, '""')}"`, `"${(l.india_sourcing_signals || '').replace(/"/g, '""')}"`, `"${(l.why_hot_lead || '').replace(/"/g, '""')}"`
+      `"${(l.employees_est || '').replace(/"/g, '""')}"`,
+      `"${(l.revenue || '').replace(/"/g, '""')}"`,
+      `"${(l.founded || '').replace(/"/g, '""')}"`
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," 

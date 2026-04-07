@@ -655,6 +655,8 @@ class LeadScraperEngine:
             google_maps_url=biz.maps_url,
             category=biz.category if biz.category else "Fashion / Clothing",
             employees_est="Unknown",
+            revenue="Unknown",
+            founded="Unknown",
             icp_score=score,
             tier=tier,
             key_contact_name="Found on About page" if dm_found else "Not found",
