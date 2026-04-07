@@ -11,6 +11,8 @@ class SearchRequest(BaseModel):
 class Lead(BaseModel):
     id: int
     company_name: str
+    description: str
+    business_category: str
     website: str
     country: str
     city: str

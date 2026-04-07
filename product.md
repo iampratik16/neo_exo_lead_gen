@@ -14,15 +14,15 @@ A Google Maps-powered B2B lead generation tool built for **Bassi Clothing**, an 
 ```yaml
 deal_customer_profile:
   company_types:
-    - "Fashion Retailers"
-    - "Clothing Brands"
+    - "Menswear Brands"
+    - "Unisex Fashion Retailers"
+    - "Clothing Brands (Mens/Unisex)"
     - "Department Stores"
+    - "Streetwear Brands"
+    - "Activewear / Sportswear Brands"
     - "E-commerce Fashion Platforms"
     - "Private Label Brands"
     - "Sustainable Fashion Startups"
-    - "Luxury Fashion Brands"
-    - "Streetwear Brands"
-    - "Activewear / Sportswear Brands"
 
   locations:
     - "United Kingdom"
@@ -231,16 +231,14 @@ Company size: 1 to 10,000 employees
 
 When given a country or city, construct multiple Google Maps search queries to maximize coverage. Use these query templates:
 
-- "[city] clothing brand"
-- "[city] fashion retailer"
-- "[city] sustainable fashion brand"
-- "[city] private label clothing"
-- "[city] fashion startup"
+- "[city] mens clothing brand"
+- "[city] unisex fashion retailer"
+- "[city] menswear store"
 - "[city] streetwear brand"
 - "[city] activewear brand"
-- "[city] luxury fashion brand"
+- "[city] fashion startup"
+- "[city] private label clothing"
 - "[city] fashion e-commerce"
-- "[city] garment company"
 
 Run each query, paginate through all results (not just first page), and deduplicate by website domain.
 

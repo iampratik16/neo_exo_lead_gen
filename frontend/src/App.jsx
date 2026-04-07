@@ -36,11 +36,14 @@ function App() {
     if (!leads.length) return;
     
     // Define headers matching the models
-    const headers = ["Company Name", "Website", "Country", "City", "Google Maps URL", "Category", "Employees (Est.)", "ICP Score", "Tier", "Key Contact", "Role", "LinkedIn", "Likely Email", "Phone", "Instagram", "Notes", "Sourcing Signals", "Why Hot Lead"];
+    const headers = ["Company Name", "Description", "Business Category", "Website", "Country", "City", "Google Maps URL", "Category (Maps)", "Employees (Est.)", "ICP Score", "Tier", "Key Contact", "Role", "LinkedIn", "Likely Email", "Phone", "Instagram", "Products / Notes", "Sourcing Signals", "Why Hot Lead"];
     
     const rows = leads.map(l => [
-      `"${l.company_name}"`, `"${l.website}"`, `"${l.country}"`, `"${l.city}"`, `"${l.google_maps_url}"`, `"${l.category}"`, `"${l.employees_est}"`, 
-      l.icp_score, `"${l.tier}"`, `"${l.key_contact_name}"`, `"${l.contact_role}"`, `"${l.linkedin_url}"`, `"${l.likely_email}"`, `"${l.phone}"`, `"${l.instagram}"`, `"${l.products_notes}"`, `"${l.india_sourcing_signals}"`, `"${l.why_hot_lead}"`
+      `"${(l.company_name || '').replace(/"/g, '""')}"`,
+      `"${(l.description || '').replace(/"/g, '""')}"`,
+      `"${(l.business_category || '').replace(/"/g, '""')}"`,
+      `"${l.website}"`, `"${l.country}"`, `"${l.city}"`, `"${l.google_maps_url}"`, `"${l.category}"`, `"${l.employees_est}"`, 
+      l.icp_score, `"${l.tier}"`, `"${l.key_contact_name}"`, `"${l.contact_role}"`, `"${l.linkedin_url}"`, `"${l.likely_email}"`, `"${l.phone}"`, `"${l.instagram}"`, `"${(l.products_notes || '').replace(/"/g, '""')}"`, `"${(l.india_sourcing_signals || '').replace(/"/g, '""')}"`, `"${(l.why_hot_lead || '').replace(/"/g, '""')}"`
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -220,6 +223,7 @@ function App() {
                   <thead className="bg-neutral-50 text-neutral-700 uppercase">
                     <tr>
                       <th className="px-4 py-3 rounded-tl-lg">Company</th>
+                      <th className="px-4 py-3">Category</th>
                       <th className="px-4 py-3">Location</th>
                       <th className="px-4 py-3">Contact</th>
                       <th className="px-4 py-3">Tier / Score</th>
@@ -229,9 +233,13 @@ function App() {
                   <tbody>
                     {leads.map((lead, idx) => (
                       <tr key={idx} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
-                        <td className="px-4 py-3 font-medium text-neutral-900">
+                        <td className="px-4 py-3 font-medium text-neutral-900 max-w-xs">
                           {lead.company_name} <br/>
-                          <a href={lead.website} className="text-xs text-indigo-500 font-normal hover:underline" target="_blank" rel="noreferrer">Website</a>
+                          <span className="text-xs text-neutral-500 line-clamp-2">{lead.description}</span>
+                          <a href={lead.website} className="text-xs text-indigo-500 font-normal hover:underline block mt-0.5" target="_blank" rel="noreferrer">Website</a>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-block px-2 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap">{lead.business_category}</span>
                         </td>
                         <td className="px-4 py-3">{lead.city}, {lead.country}</td>
                         <td className="px-4 py-3">

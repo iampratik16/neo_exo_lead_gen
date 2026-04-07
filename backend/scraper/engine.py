@@ -107,6 +107,45 @@ class RawBusiness:
     rating: str = ""
     reviews: str = ""
     category: str = ""
+    description: str = ""
+
+
+# ---------------------------------------------------------------------------
+# ICP category classification helpers
+# ---------------------------------------------------------------------------
+ICP_CATEGORIES = [
+    "Fashion Retailers",
+    "Clothing Brands",
+    "Department Stores",
+    "E-commerce Fashion Platforms",
+    "Private Label Brands",
+    "Sustainable Fashion Startups",
+    "Luxury Fashion Brands",
+    "Streetwear Brands",
+    "Activewear / Sportswear Brands",
+]
+
+# keyword → category mapping (checked against lowered text)
+_CATEGORY_RULES: List[Tuple[List[str], str]] = [
+    (["department store", "department"], "Department Stores"),
+    (["streetwear", "street wear", "urban wear", "skate"], "Streetwear Brands"),
+    (["activewear", "sportswear", "athletic", "gym wear", "fitness apparel"], "Activewear / Sportswear Brands"),
+    (["sustainable", "eco-friendly", "organic cotton", "fair trade", "ethical fashion"], "Sustainable Fashion Startups"),
+    (["private label", "white label", "own brand manufacturing"], "Private Label Brands"),
+    (["luxury", "haute couture", "premium fashion", "designer"], "Luxury Fashion Brands"),
+    (["e-commerce", "ecommerce", "online store", "online shop", "online fashion", "webshop"], "E-commerce Fashion Platforms"),
+    (["retailer", "retail", "fashion store", "clothing store", "boutique"], "Fashion Retailers"),
+    (["brand", "clothing", "apparel", "fashion", "wear", "garment"], "Clothing Brands"),
+]
+
+
+def classify_business_category(about_text: str, maps_category: str) -> str:
+    """Classify a business into one of the ICP categories."""
+    combined = (about_text + " " + maps_category).lower()
+    for keywords, category in _CATEGORY_RULES:
+        if any(kw in combined for kw in keywords):
+            return category
+    return "Clothing Brands"  # sensible default for a Maps clothing search
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +188,7 @@ class LeadScraperEngine:
 
         # Build query list
         company_types = request.company_types if request.company_types else [
-            "clothing brand", "fashion retailer"
+            "mens clothing brand", "unisex fashion retailer", "menswear store"
         ]
         queries: List[Tuple[str, str, str]] = []  # (query, city, country)
         for city, country in search_locations:
@@ -359,6 +398,48 @@ class LeadScraperEngine:
                     except Exception:
                         pass
 
+                    # Extract the Google Maps "About" / description snippet
+                    maps_description = ""
+                    maps_category_text = ""
+                    try:
+                        # The category chip (e.g. "Clothing store") is usually the
+                        # first button[jsaction] with category-like text near the top
+                        cat_el = page.locator('button[jsaction*="category"]').first
+                        maps_category_text = (await cat_el.text_content(timeout=2000)) or ""
+                    except Exception:
+                        pass
+
+                    # Fallback: try to grab category from the panel heading area
+                    if not maps_category_text:
+                        try:
+                            # Category text often appears near the business name
+                            cat_spans = await page.locator('button.DkEaL').all()
+                            if cat_spans:
+                                maps_category_text = (await cat_spans[0].text_content(timeout=2000)) or ""
+                        except Exception:
+                            pass
+
+                    # Try to extract the description / "About" text from panel
+                    try:
+                        # Google Maps puts the about text in various containers
+                        about_selectors = [
+                            'div.WeS02d.fontBodyMedium',   # common in 2025+ Maps
+                            'div[class*="PYvSYb"]',        # some Maps versions use this
+                            'div.rogA2c div.fontBodyMedium', # older variant
+                        ]
+                        for sel in about_selectors:
+                            try:
+                                about_el = page.locator(sel).first
+                                txt = (await about_el.text_content(timeout=2000)) or ""
+                                txt = txt.strip()
+                                if txt and len(txt) > 15:
+                                    maps_description = txt[:300]
+                                    break
+                            except Exception:
+                                continue
+                    except Exception:
+                        pass
+
                     results.append(
                         RawBusiness(
                             name=name.strip(),
@@ -368,6 +449,8 @@ class LeadScraperEngine:
                             country=country,
                             city=city,
                             rating=rating,
+                            category=maps_category_text.strip(),
+                            description=maps_description,
                         )
                     )
 
@@ -464,6 +547,29 @@ class LeadScraperEngine:
         # ----- ICP Scoring -----
         score = 3  # baseline: discovered via a relevant maps search query
 
+        # Menswear & Unisex Focus Filter
+        about_text_lower = about_text.lower()
+        menswear_keywords = [
+            "menswear", "men's wear", "mens clothing", "men's clothing",
+            "unisex", "men's fashion", "mens fashion", "mens apparel", "men's apparel",
+            "sweatshirt", "hoodie", "mercerized cotton", "t-shirt", "round neck",
+            "polo neck", "trackpant", "shorts", "capri"
+        ]
+        womens_only_keywords = [
+            "womenswear", "women's wear", "womens clothing", "women's clothing",
+            "ladies fashion", "women's fashion", "womens fashion", "womens apparel"
+        ]
+
+        found_mens_products = [kw for kw in menswear_keywords if kw in about_text_lower]
+        has_menswear = len(found_mens_products) > 0
+        has_womenswear = any(kw in about_text_lower for kw in womens_only_keywords)
+
+        if has_menswear:
+            score += 2
+        elif has_womenswear and not has_menswear:
+            # Penalize heavily if it's strictly a women's brand
+            score -= 5
+
         # +1 for location match (UK / major EU hub)
         location_keywords = [
             "london", "paris", "amsterdam", "berlin", "milan", "stockholm",
@@ -526,14 +632,28 @@ class LeadScraperEngine:
         email_str = ", ".join(clean_emails) if clean_emails else "No email found"
         email_count = len(clean_emails)
 
+        # ----- Business category classification -----
+        biz_category = classify_business_category(about_text, biz.category)
+
+        # ----- Build short description -----
+        description = biz.description  # from Google Maps panel
+        if not description or len(description) < 20:
+            # Auto-generate a short description from website content
+            description = self._generate_short_description(
+                biz.name, biz_category, biz.city, biz.country,
+                about_text, has_menswear, signals
+            )
+
         return Lead(
             id=self.leads_found + 1,
             company_name=biz.name,
+            description=description,
+            business_category=biz_category,
             website=biz.website,
             country=biz.country,
             city=biz.city,
             google_maps_url=biz.maps_url,
-            category="Fashion / Clothing",
+            category=biz.category if biz.category else "Fashion / Clothing",
             employees_est="Unknown",
             icp_score=score,
             tier=tier,
@@ -543,7 +663,7 @@ class LeadScraperEngine:
             likely_email=email_str,
             phone=biz.phone,
             instagram="N/A",
-            products_notes="Auto-classified from Maps search",
+            products_notes=", ".join(found_mens_products).title() if has_menswear else "Auto-classified from Maps search",
             india_sourcing_signals=", ".join(signals) if signals else "None detected",
             why_hot_lead=(
                 f"Score {score}/10. {email_count} email(s) found. "
@@ -552,6 +672,30 @@ class LeadScraperEngine:
                 + f"Rating: {biz.rating or 'N/A'}."
             ),
         )
+
+    # ---- description generator ---------------------------------------------
+    @staticmethod
+    def _generate_short_description(
+        name: str, category: str, city: str, country: str,
+        about_text: str, has_menswear: bool, signals: List[str]
+    ) -> str:
+        """Auto-generate a concise business description when Maps didn't provide one."""
+        parts = [f"{name} is a {category.lower()} based in {city}, {country}."]
+
+        # Add product focus
+        if has_menswear:
+            parts.append("Offers menswear / unisex products.")
+
+        # Add sourcing readiness hint
+        if signals:
+            parts.append(f"Sourcing signals: {', '.join(signals[:2])}.")
+
+        # Add e-commerce hint
+        ecom_keywords = ["add to cart", "add to bag", "shop now", "buy now"]
+        if any(kw in about_text for kw in ecom_keywords):
+            parts.append("Sells online via e-commerce.")
+
+        return " ".join(parts)
 
     # ---- utilities --------------------------------------------------------
     @staticmethod

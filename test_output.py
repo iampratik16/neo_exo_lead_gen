@@ -16,7 +16,7 @@ def main():
     payload = {
         "country": "United Kingdom",
         "city": "London",
-        "company_types": ["clothing brand", "fashion retailer"],
+        "company_types": [],  # using our newly defined backend defaults
         "radius_km": 25,
         "min_score": 3,  # low threshold so we see all results
     }
