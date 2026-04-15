@@ -1,8 +1,15 @@
-# React + Vite
+# Neo Eco Cleaning — Lead Generator Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite frontend for the Neo Eco Cleaning Google Maps lead scraper.
 
-Currently, two official plugins are available:
+Displays real-time scraping progress and results for property management firms
+and estate/letting agents across London boroughs.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Setup
+
+```bash
+npm install
+npm run dev
+```
+
+Backend must be running on `http://localhost:8000`.

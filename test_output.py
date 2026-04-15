@@ -1,6 +1,6 @@
 """
-Test script for Bassi Leads Scraper — runs a real scrape against Google Maps.
-Polls for progress and prints all leads found.
+Test script for Neo Eco Cleaning Lead Generator — runs a real scrape
+against Google Maps. Polls for progress and prints all leads found.
 """
 import time
 import sys
@@ -8,22 +8,16 @@ import requests
 
 API = "http://localhost:8000"
 
+
 def main():
     print("=" * 60)
-    print("  BASSI LEADS SCRAPER — LIVE TEST")
+    print("  NEO ECO CLEANING — LEAD GENERATOR LIVE TEST")
     print("=" * 60)
 
-    payload = {
-        "country": "United Kingdom",
-        "city": "London",
-        "company_types": [],  # using our newly defined backend defaults
-        "radius_km": 25,
-        "min_score": 3,  # low threshold so we see all results
-    }
+    payload = {"dry_run": False}
 
-    print(f"\n📍 Location : {payload['city']}, {payload['country']}")
-    print(f"🔎 Queries  : {payload['company_types']}")
-    print(f"⚙️  Min Score: {payload['min_score']}")
+    print(f"\n📍 Target   : London — North London boroughs")
+    print(f"🔎 Queries  : 46 (Property Management + Estate/Letting Agents)")
     print("-" * 60)
 
     # Start scrape
@@ -37,9 +31,9 @@ def main():
     session_id = resp.json()["session_id"]
     print(f"🚀 Session started: {session_id}\n")
 
-    # Poll for progress - timeout after 5 minutes
+    # Poll for progress — timeout after 10 minutes (46 queries need more time)
     start = time.time()
-    timeout = 300
+    timeout = 600
     last_action = ""
 
     while time.time() - start < timeout:
@@ -58,7 +52,7 @@ def main():
             break
         time.sleep(1)
     else:
-        print("\n⏰ Timed out after 5 minutes.")
+        print("\n⏰ Timed out after 10 minutes.")
 
     # Fetch results
     print("\n" + "=" * 60)
@@ -72,27 +66,27 @@ def main():
 
     for i, lead in enumerate(results, 1):
         print(f"\n{'─' * 60}")
-        print(f"  Lead #{i}: {lead['company_name']}")
-        print(f"  🌐 Website : {lead['website']}")
-        print(f"  📧 Email(s): {lead['likely_email']}")
+        print(f"  Lead #{i}: {lead['business_name']}")
+        print(f"  🏢 Category: {lead['category']}")
+        print(f"  📍 Borough : {lead['borough']} ({lead['area_zone']})")
         print(f"  📞 Phone   : {lead['phone']}")
-        print(f"  📍 Location: {lead['city']}, {lead['country']}")
-        print(f"  ⭐ Score   : {lead['icp_score']}/10  ({lead['tier']})")
-        print(f"  🔗 Maps    : {lead['google_maps_url']}")
-        print(f"  🏭 Signals : {lead['india_sourcing_signals']}")
-        print(f"  💡 Why Hot : {lead['why_hot_lead']}")
+        print(f"  📧 Email   : {lead['email']}")
+        print(f"  🌐 Website : {lead['website']}")
+        print(f"  ⭐ Rating  : {lead['rating']} ({lead['review_count']} reviews)")
+        print(f"  🎯 Priority: {lead['outreach_priority']} — {lead['icp_tier']}")
 
     # Summary
-    tier1 = sum(1 for l in results if "Tier 1" in l["tier"])
-    tier2 = sum(1 for l in results if "Tier 2" in l["tier"])
-    tier3 = sum(1 for l in results if "Tier 3" in l["tier"])
-    has_email = sum(1 for l in results if "No email" not in l["likely_email"])
+    high = sum(1 for l in results if l["outreach_priority"] == "HIGH")
+    medium = sum(1 for l in results if l["outreach_priority"] == "MEDIUM")
+    low = sum(1 for l in results if l["outreach_priority"] == "LOW")
+    has_email = sum(1 for l in results if l["email"])
 
     print(f"\n{'=' * 60}")
     print(f"  SUMMARY")
-    print(f"  Total: {len(results)} | Tier 1 🔥: {tier1} | Tier 2 ⏳: {tier2} | Tier 3 ❄️: {tier3}")
-    print(f"  With real email(s): {has_email}/{len(results)}")
+    print(f"  Total: {len(results)} | 🟢 HIGH: {high} | 🟡 MEDIUM: {medium} | 🔴 LOW: {low}")
+    print(f"  With email: {has_email}/{len(results)}")
     print(f"{'=' * 60}")
+
 
 if __name__ == "__main__":
     main()

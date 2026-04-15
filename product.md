@@ -1,4 +1,4 @@
-# 🗺️ Bassi Clothing — Google Maps Lead Scraper
+# 🗺️ Neo Eco Cleaning — Google Maps Lead Generator
 ### Product Specification & Master Prompt for Antigravity
 
 ---
@@ -348,4 +348,4 @@ Then start scraping immediately.
 
 ---
 
-*Document version: 1.0 | Prepared for Bassi Clothing | April 2026*
+*Document version: 2.0 | Adapted for Neo Eco Cleaning Services Ltd | April 2026*
