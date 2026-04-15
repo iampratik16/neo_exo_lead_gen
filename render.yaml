@@ -1,0 +1,28 @@
+services:
+  # Backend FastAPI Service
+  - type: web
+    name: neo-eco-backend
+    runtime: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: PORT
+        value: 8000
+    plan: free # Change if needed
+
+  # Frontend React Service
+  - type: static_site
+    name: neo-eco-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishPath: ./dist
+
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: neo-eco-backend
+          envVarKey: RENDER_EXTERNAL_URL
+    plan: free # Change if needed
